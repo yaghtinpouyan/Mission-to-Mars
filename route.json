@@ -1,0 +1,24 @@
+{
+  "clear": {
+    "mode": "Full science loop",
+    "distanceKm": 4.5,
+    "timeHours": 3.3,
+    "marginHours": 0.7,
+    "verdict": "GO",
+    "stops": [
+      { "name": "Stop A: Delta front outcrop", "why": "Layered sediments, a record of the ancient lake." },
+      { "name": "Stop B: Clay-bearing terrain", "why": "Clay minerals, a good place to look for water-altered rock." },
+      { "name": "Stop C: Crater floor boulders", "why": "Diverse rock types transported by ancient water." }
+    ]
+  },
+  "dusty": {
+    "mode": "Short out-and-back",
+    "distanceKm": 1.3,
+    "timeHours": 1.6,
+    "marginHours": 2.4,
+    "verdict": "GO",
+    "stops": [
+      { "name": "Stop A: Delta front outcrop", "why": "Layered sediments, a record of the ancient lake." }
+    ]
+  }
+}

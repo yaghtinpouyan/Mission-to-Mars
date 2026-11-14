@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Marswalk Planner</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside>
+    <h1>Marswalk Planner</h1>
+    <p class="muted">Jezero Crater delta. An EVA route planner that combines terrain, science targets, and weather conditions.</p>
+
+    <h2>Conditions</h2>
+    <select id="cond">
+      <option value="clear">Clear sol</option>
+      <option value="dusty">Dust warning</option>
+    </select>
+
+    <h2>Map layer</h2>
+    <select id="layer">
+      <option value="terrain">Terrain image</option>
+      <option value="slope">Slope (walkability)</option>
+    </select>
+
+    <h2>Vertical exaggeration</h2>
+    <input id="exag" type="range" min="1" max="5" step="0.5" value="1">
+
+    <h2>Route summary</h2>
+    <div id="summary"></div>
+    <div id="verdict"></div>
+
+    <h2>Science stops</h2>
+    <div id="stops"></div>
+
+    <p class="muted small">Data: NASA/JPL, USGS Astrogeology, MRO HiRISE (University of Arizona).</p>
+  </aside>
+
+  <!-- The view box-->
+  <main id="viewer">3D viewer goes here</main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+/* Colors*/
+:root {
+  --bg: #14100e;
+  --panel: #1f1815;
+  --line: #3a2c25;
+  --text: #eadfd6;
+  --muted: #a89588;
+  --accent: #e0663a;
+  --ok: #6fbf73;
+  --bad: #e0524a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;               /* puts the sidebar and viewer next to each other */
+  font: 14px/1.45 system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+aside {
+  width: 340px;
+  padding: 18px;
+  overflow-y: auto;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+}
+
+#viewer {
+  flex: 1;                     /* viewer takes remaining space */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  background: #000;
+}
+
+h1 { font-size: 18px; margin: 0 0 4px; }
+h2 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: 18px 0 6px;
+}
+
+.muted { color: var(--muted); margin: 4px 0; }
+.small { font-size: 12px; margin-top: 20px; }
+
+select, input[type="range"] {
+  width: 100%;
+  padding: 7px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+#verdict {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  border: 1px solid var(--line);
+}
+
+.stop {
+  padding: 8px;
+  margin: 6px 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.stop b { color: var(--accent); }
+
+/* On phones stack the sidebar above viewer */
+@media (max-width: 760px) {
+  body { flex-direction: column; }
+  aside { width: 100%; height: 55vh; }
+  #viewer { height: 45vh; }
+}
