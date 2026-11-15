@@ -41,15 +41,13 @@ function screenOf(w, lon, lat) { const G = w.MarsGeo, S = w.viewer.getState(), c
   check(!document_hasOldStuff(w), 'old weather / science-stop / GO-NO-GO controls are gone');
   await sleep(300); shot(w, '01_color');
 
-  // layers + vertical exaggeration
+  // map layers use fixed, unexaggerated hillshade
   const before = Int16Array.from(S.elev);
-  w.viewer.setLayer('elevation'); w.viewer.setExaggeration(3); await sleep(500); shot(w, '02_elevation_x3');
-  w.viewer.setExaggeration(5); await sleep(400); shot(w, '03_elevation_x5');
+  w.viewer.setLayer('elevation'); await sleep(500); shot(w, '02_elevation');
   w.viewer.setLayer('slope'); await sleep(500); shot(w, '04_slope');
-  check($(w, 'exag').disabled === false, 'exaggeration slider is enabled on the slope/elevation layers');
   w.viewer.setLayer('color'); await sleep(200);
-  check($(w, 'exag').disabled === true, 'exaggeration slider is disabled on the colour layer (its shading is built in)');
-  check(before.every((v, i) => v === S.elev[i]), 'changing vertical exaggeration never changes the elevation data');
+  check(!$(w, 'exag') && !w.viewer.setExaggeration, 'vertical exaggeration control is removed');
+  check(before.every((v, i) => v === S.elev[i]), 'changing map layers never changes the elevation data');
 
   // click outside the map, then a route
   click(w, 5, 5);
@@ -70,6 +68,8 @@ function screenOf(w, lon, lat) { const G = w.MarsGeo, S = w.viewer.getState(), c
     await sleep(1500); shot(w, '07_optimized');
     check($(w, 'busy').hidden, 'busy animation disappears when the optimized route is ready');
     check(S.show === 'optimized' && /optimized/.test($(w, 'summaryFor').textContent), 'optimized route is shown automatically');
+    check(S.ghost && $(w, 'ghost').checked, 'general route is overlaid faintly to make route differences easier to see');
+    check(/Steepest terrain/.test($(w, 'status').textContent) && /max deviation/.test($(w, 'status').textContent), 'status explains the optimization improvement and route deviation');
     check(/Same 463 m terrain/.test($(w, 'summary').innerHTML), 'summary compares general vs optimized on the same 463 m terrain');
     check(/Detours from general route/.test($(w, 'summary').innerHTML), 'summary lists detours from the general route');
     const radios = Array.from(w.document.getElementsByName('routeview'));

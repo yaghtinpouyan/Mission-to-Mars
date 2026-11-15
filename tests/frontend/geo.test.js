@@ -35,7 +35,7 @@ test('formatting is null-safe and uses a real minus sign', () => {
   assert.strictEqual(G.fmtInt(-1250), '\u22121,250'); assert.strictEqual(G.fmtKm(3512), '3.5 km'); assert.strictEqual(G.fmtDeg(4.24), '4.2\u00B0');
   assert.strictEqual(G.fmtLonLat(62.3414, 12.8741), '62.341\u00B0E 12.874\u00B0N');
 });
-test('hillshade: flat = 1, lit slope brighter than shadowed slope, exaggeration strengthens contrast, data untouched', () => {
+test('hillshade: flat = 1, lit slope brighter than shadowed slope, strength increases contrast, data untouched', () => {
   const cols = 20, rows = 20, flat = new Int16Array(cols * rows);
   const hs = G.hillshade(flat, cols, rows, 3);
   assert.ok(hs.every(v => Math.abs(v - 1) < 1e-6), 'flat terrain should not be shaded');
@@ -48,7 +48,7 @@ test('hillshade: flat = 1, lit slope brighter than shadowed slope, exaggeration 
   const dark = G.hillshade(rev, cols, rows, 1)[10 * cols + 10];
   assert.ok(lit > 1 && dark < 1, 'lit ' + lit + ' dark ' + dark);
   const lit3 = G.hillshade(ramp, cols, rows, 3)[10 * cols + 10];
-  assert.ok(Math.abs(lit3 - 1) >= Math.abs(lit - 1) - 1e-9, 'more exaggeration = at least as much contrast');
+  assert.ok(Math.abs(lit3 - 1) >= Math.abs(lit - 1) - 1e-9, 'higher strength = at least as much contrast');
   assert.deepStrictEqual(ramp, copy, 'hillshade must never modify the elevation data');
 });
 test('colour ramps: endpoints and monotone sanity', () => {

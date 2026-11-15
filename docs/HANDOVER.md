@@ -31,7 +31,7 @@ broader route-quality sampling beyond the real routes above.
 - Cost = dist*(wDist + wSlope*(s/10deg)^2) + wClimb*climb; s = max(step slope, 3x3 cell slope). Defaults wSlope 4, wClimb 2. No hard slope limit by default (user may set maxSlope/minElev/maxElev). A* heuristic admissible; A* equals brute-force Dijkstra in tests. 16-neighbour moves.
 - Stage 2: corridor (buffer) around the general route, A* on 463 m cells; corridor doubles (5.6 km -> up to 40 km) when no route fits, route hugs the corridor wall, or best route still crosses cells with slope >= 10 deg. Tested on synthetic ridge: max slope 47.9 -> 9.2 deg.
 - 463 m storage: flat Int16 file memory-mapped (44 MB). COG/tiling rejected as unnecessary for MC-13 only.
-- "Vertical exaggeration" = hillshade strength (visual only, disabled on the colour layer which has baked shading).
+- Elevation and slope layers use fixed hillshade at true vertical scale; the colour layer has baked shading.
 
 ## Known issues / next steps for the next Claude
 1. Keep the 44 MB raw raster available locally or in a release/LFS for deployments; it is intentionally excluded from normal Git history.
