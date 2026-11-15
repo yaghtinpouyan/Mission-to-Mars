@@ -1,0 +1,19 @@
+# macOS / editors
+.DS_Store
+.idea/
+*.iml
+
+# build output
+backend/out/
+
+# QGIS / large raster working files (never commit these)
+*.tif
+*.tiff
+*.aux.xml
+*.qgz
+*.qgs
+
+# the full-resolution (463 m) raster is large: keep it out of Git (see data/hires/README.md)
+data/hires/*.raw
+data/hires/*.bin
+data/hires/*.i16
