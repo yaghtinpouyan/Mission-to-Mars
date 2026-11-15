@@ -1,0 +1,17 @@
+ENVI
+description = {
+F:/Mars/Mission-to-Mars-Marswalk/Mission-to-Mars/data/hires/mc13_elevation_463m.raw}
+samples = 5760
+lines   = 3840
+bands   = 1
+header offset = 0
+file type = ENVI Standard
+data type = 2
+interleave = bsq
+byte order = 0
+map info = {Equirectangular, 1, 1, 2667418.79933014, 1778279.19955342, 463.093541550371, 463.093541550371}
+coordinate system string = {PROJCS["Equirectangular_Mars",GEOGCS["GCS_Mars",DATUM["D_Mars",SPHEROID["Mars_localRadius",3396190.0,0.0]],PRIMEM["Reference_Meridian",0.0],UNIT["Degree",0.0174532925199433]],PROJECTION["Equidistant_Cylindrical"],PARAMETER["False_Easting",0.0],PARAMETER["False_Northing",0.0],PARAMETER["Central_Meridian",0.0],PARAMETER["Standard_Parallel_1",0.0],UNIT["Meter",1.0]]}
+band names = {
+Band 1}
+data ignore value = -32768
+default bands = {1}
