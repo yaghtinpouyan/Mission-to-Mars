@@ -1,0 +1,4 @@
+# Keep line endings stable across Windows / macOS / Linux.
+* text=auto eol=lf
+*.png binary
+*.bat text eol=crlf
