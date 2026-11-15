@@ -315,9 +315,45 @@ public final class TestMain {
             }
             Files.move(d.resolve("a.hdr"), d.resolve("a.raw.hdr"));
             try (HiResRaster h = HiResRaster.open(d.resolve("a.raw"))) { check(h.raw(1, 1) == data[8], "alt header name"); }
-            Files.write(d.resolve("a.raw"), new byte[10]);
-            try { HiResRaster.open(d.resolve("a.raw")); throw new AssertionError("short file accepted"); } catch (IOException expected) { }
+            Path shortRaw = d.resolve("short.raw");
+            HiResRaster.writeEnvi(shortRaw, 7, 5, data);
+            Files.write(shortRaw, new byte[10]);
+            try { HiResRaster.open(shortRaw); throw new AssertionError("short file accepted"); } catch (IOException expected) { }
             try { new HiResTerrain(HiResRaster.fromArray(7, 5, data, (short) -32768), SMALL); throw new AssertionError("misfit accepted"); } catch (IllegalArgumentException expected) { }
+        });
+
+        test("ENVI map info validates high-resolution origin and cell size", () -> {
+            Georef fine = SMALL.refined(4);
+            Path raw = Files.createTempDirectory("envi-map").resolve("aligned.raw");
+            HiResRaster.writeEnvi(raw, fine.cols, fine.rows, new short[fine.cols * fine.rows]);
+            Path hdr = raw.resolveSibling("aligned.hdr");
+            String base = Files.readString(hdr);
+            double cellM = fine.southMeters();
+            double xCenter = R * Math.toRadians(fine.west + fine.degPerCell * 0.5);
+            double yCenter = R * Math.toRadians(fine.north - fine.degPerCell * 0.5);
+            String map = String.format(java.util.Locale.ROOT,
+                    "map info = {Equirectangular, 1, 1, %.12f, %.12f, %.12f, %.12f}%n",
+                    xCenter, yCenter, cellM, cellM);
+            Files.writeString(hdr, base + map);
+            try (HiResRaster raster = HiResRaster.open(raw)) { new HiResTerrain(raster, SMALL); }
+
+            String shifted = String.format(java.util.Locale.ROOT,
+                    "map info = {Equirectangular, 1, 1, %.12f, %.12f, %.12f, %.12f}%n",
+                    xCenter + R * Math.toRadians(0.02), yCenter, cellM, cellM);
+            Files.writeString(hdr, base + shifted);
+            try (HiResRaster raster = HiResRaster.open(raw)) {
+                try { new HiResTerrain(raster, SMALL); throw new AssertionError("misaligned origin accepted"); }
+                catch (IllegalArgumentException expected) { check(expected.getMessage().contains("misaligned"), expected.getMessage()); }
+            }
+
+            String wrongScale = String.format(java.util.Locale.ROOT,
+                    "map info = {Equirectangular, 1, 1, %.12f, %.12f, %.12f, %.12f}%n",
+                    xCenter, yCenter, cellM * 1.01, cellM);
+            Files.writeString(hdr, base + wrongScale);
+            try (HiResRaster raster = HiResRaster.open(raw)) {
+                try { new HiResTerrain(raster, SMALL); throw new AssertionError("mis-scaled cells accepted"); }
+                catch (IllegalArgumentException expected) { check(expected.getMessage().contains("misaligned"), expected.getMessage()); }
+            }
         });
 
         System.out.println("\n== Stage 2: corridor search on a synthetic 463 m raster (test fixtures only, not real terrain) ==");

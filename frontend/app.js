@@ -11,7 +11,7 @@
 
   const el = {
     viewer: $('mapArea'), map: $('map'), status: $('status'), steps: $('steps'), reset: $('reset'), recalc: $('recalc'),
-    ghost: $('ghost'), layer: $('layer'), exag: $('exag'), exagVal: $('exagVal'), exagNote: $('exagNote'),
+    ghost: $('ghost'), layer: $('layer'),
     summary: $('summary'), summaryFor: $('summaryFor'), profile: $('profile'), legend: $('legend'), readout: $('readout'),
     busy: $('busy'), busyText: $('busyText'), fatal: $('fatal'), views: document.getElementsByName('routeview'),
   };
@@ -19,7 +19,7 @@
 
   const S = {
     info: null, elev: null, slope: null, colorImg: null,
-    layer: 'color', exag: 2,
+    layer: 'color',
     view: null, w: 900, h: 640,
     start: null, end: null,               // {lon, lat}
     general: null, optimized: null,       // see makeRoute()
@@ -86,16 +86,17 @@
   }
 
   // ------------------------------------------------------------------ map layers
-  const shadeCache = new Map(), layerCache = new Map();
-  function getShade(z) {
-    if (!shadeCache.has(z)) shadeCache.set(z, G.hillshade(S.elev, COLS, ROWS, z));
-    return shadeCache.get(z);
+  const layerCache = new Map();
+  let shade;
+  function getShade() {
+    if (!shade) shade = G.hillshade(S.elev, COLS, ROWS, 1);
+    return shade;
   }
   function layerCanvas(name) {
-    const key = name + ':' + S.exag;
+    const key = name;
     if (layerCache.has(key)) return layerCache.get(key);
     if (layerCache.size > 8) layerCache.clear();
-    const shade = getShade(S.exag), cv = document.createElement('canvas');
+    const shade = getShade(), cv = document.createElement('canvas');
     cv.width = COLS; cv.height = ROWS;
     const c2 = cv.getContext('2d'), img = c2.createImageData(COLS, ROWS), d = img.data;
     for (let i = 0; i < COLS * ROWS; i++) {
@@ -131,6 +132,7 @@
     S.ctrl = new AbortController();
     const signal = S.ctrl.signal;
     S.general = null; S.optimized = null; S.show = 'general';
+    S.ghost = false; el.ghost.checked = false;
     syncToggle(); updateAll();
     try {
       setBusy('Finding the general route…');
@@ -152,9 +154,12 @@
         const o = await getJSON('/api/route/refine?id=' + encodeURIComponent(g.id) + '&maxRadiusM=' + $('width').value, signal);
         S.optimized = makeRoute(o, 'optimized');
         S.show = 'optimized';
+        S.ghost = true; el.ghost.checked = true;
         startDrawAnim(S.optimized);
         setBusy(null);
-        say('Optimized route ready. Use "Route shown" to compare it with the general route.');
+        say('Optimized on 463 m terrain: steepest terrain ' + G.fmtDeg(o.generalOnHires.maxTerrainSlopeDeg, 1) + ' → ' +
+          G.fmtDeg(o.route.stats.maxTerrainSlopeDeg, 1) + ', max deviation ' + G.fmtM(o.adjustments.maxDeviationM) +
+          '. Paths can overlap at this zoom; zoom in to compare.');
       } catch (e) {
         if (e.name === 'AbortError') throw e;
         setBusy(null);
@@ -174,6 +179,7 @@
   function resetSelection() {
     cancel();
     S.start = S.end = S.general = S.optimized = null; S.show = 'general';
+    S.ghost = false; el.ghost.checked = false;
     setBusy(null);
     syncToggle(); updateAll();
     say('Click the map to choose a start point.');
@@ -220,6 +226,9 @@
     let h = '';
     if (r) h += '<div class="li"><i class="sw" style="background:' + COLORS[r.kind] + '"></i><span>' +
       (r.kind === 'optimized' ? '<b>Optimized route</b> · refined on 463 m terrain' : '<b>General route</b> · 1,852 m terrain grid') + '</span></div>';
+    const other = r === S.optimized ? S.general : S.optimized;
+    if (S.ghost && other) h += '<div class="li"><i class="sw" style="background:' + COLORS[other.kind] + '"></i><span>' +
+      (other.kind === 'optimized' ? 'Optimized route' : 'General route') + ' · faint comparison</span></div>';
     if (S.start) h += '<div class="li"><i class="dot" style="background:#2ecc71"></i><span>Start</span></div>';
     if (S.end) h += '<div class="li"><i class="dot" style="background:#e74c3c"></i><span>Destination</span></div>';
     el.legend.innerHTML = h;
@@ -343,11 +352,11 @@
 
     // routes
     const vis = visibleRoute(), other = vis === S.optimized ? S.general : S.optimized;
-    if (S.ghost && vis && other) strokeRoute(other, COLORS[other.kind], { alpha: 0.4, width: 2, dash: [6, 6] });
     if (S.busy && S.general) strokeRoute(S.general, '#ffffff', { alpha: 0.9, width: 2, dash: [10, 10], dashOffset: -(now / 40) % 20 });   // "scanning" ants while optimizing
     let progress = 1;
     if (vis && S.drawAnim.route === vis) { const t = Math.min(1, (now - S.drawAnim.t0) / S.drawAnim.dur); progress = 1 - Math.pow(1 - t, 3); }
     if (vis) strokeRoute(vis, COLORS[vis.kind], { width: 3.5, progress });
+    if (S.ghost && vis && other) strokeRoute(other, COLORS[other.kind], { alpha: 0.75, width: 2.5, dash: [5, 4] });
 
     // markers and labels
     const obstacles = [];
@@ -372,7 +381,10 @@
     if (S.busy) { say('Please wait for the current calculation to finish (or press Clear).'); return; }
     const c = G.screenToCell(S.view, sx, sy), p = G.cellToLonLat(c.x, c.y);
     if (!G.cellInBounds(c.x, c.y)) { say('Click inside the MC-13 region (45–90°E, 0–30°N).', 'warn'); return; }
-    if (S.end || (S.general && !S.start)) { S.start = S.end = S.general = S.optimized = null; S.show = 'general'; syncToggle(); }
+    if (S.end || (S.general && !S.start)) {
+      S.start = S.end = S.general = S.optimized = null; S.show = 'general';
+      S.ghost = false; el.ghost.checked = false; syncToggle();
+    }
     if (!S.start) {
       S.start = p; S.pulse.start = performance.now();
       say('Start set at ' + G.fmtLonLat(p.lon, p.lat) + '. Now click the destination.');
@@ -420,19 +432,13 @@
   const viewer = {
     setLayer(name) {
       S.layer = name; el.layer.value = name;
-      el.exag.disabled = name === 'color';
-      el.exagNote.textContent = name === 'color'
-        ? 'The color map already has its shading built in, so exaggeration applies to the Elevation and Slope layers. It is a visual effect only.'
-        : 'Visual shading only. It never changes routes, slopes or any measurement.';
       invalidate();
     },
-    setExaggeration(n) { S.exag = n; el.exag.value = n; el.exagVal.textContent = n + '×'; invalidate(); },
     getState() { return S; },
   };
   window.viewer = viewer;       // other code (e.g. a future 3D view) can drive the same controls
 
   el.layer.addEventListener('change', () => viewer.setLayer(el.layer.value));
-  el.exag.addEventListener('input', () => viewer.setExaggeration(Number(el.exag.value)));
   el.reset.addEventListener('click', resetSelection);
   el.recalc.addEventListener('click', compute);
   el.ghost.addEventListener('change', () => { S.ghost = el.ghost.checked; invalidate(); });
@@ -454,7 +460,7 @@
   // ------------------------------------------------------------------ start
   async function boot() {
     resize();
-    updateSteps(); viewer.setLayer('color'); viewer.setExaggeration(2);
+    updateSteps(); viewer.setLayer('color');
     try {
       S.info = await getJSON('/api/info');
       [S.elev, S.slope, S.colorImg] = await Promise.all([getGrid('/api/grid/elevation.i16'), getGrid('/api/grid/slope.i16'), loadImage(API + '/api/layer/color.png')]);

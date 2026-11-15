@@ -75,11 +75,10 @@
 
   // ---------- hillshade (visual only) ----------
   /**
-   * Relief shading from elevation. `zFactor` is the visual vertical exaggeration: it only changes how strong the
-   * shading looks and never touches the elevation data used for navigation.
+   * Relief shading from elevation. `strength` controls display contrast only; it never changes the elevation data.
    * elev: Int16Array (metres, -32768 = no data), row-major, row 0 = north. Returns Float32Array of brightness multipliers.
    */
-  function hillshade(elev, cols, rows, zFactor, opts) {
+  function hillshade(elev, cols, rows, strength, opts) {
     const o = Object.assign({ azimuthDeg: 315, altitudeDeg: 45, cellM: GRID.cellM, north: GRID.north, degPerCell: GRID.degPerCell }, opts || {});
     const az = o.azimuthDeg * Math.PI / 180, alt = o.altitudeDeg * Math.PI / 180;
     const Le = Math.sin(az) * Math.cos(alt), Ln = Math.cos(az) * Math.cos(alt), Lu = Math.sin(alt);
@@ -90,8 +89,8 @@
       const dx = o.cellM * Math.cos(lat * Math.PI / 180), dy = o.cellM;      // east-west ground spacing shrinks with latitude
       for (let c = 0; c < cols; c++) {
         const a = at(c - 1, r - 1), b = at(c, r - 1), cc = at(c + 1, r - 1), d = at(c - 1, r), f = at(c + 1, r), g = at(c - 1, r + 1), h = at(c, r + 1), i = at(c + 1, r + 1);
-        const gE = zFactor * ((cc + 2 * f + i) - (a + 2 * d + g)) / (8 * dx);
-        const gN = zFactor * ((a + 2 * b + cc) - (g + 2 * h + i)) / (8 * dy);
+        const gE = strength * ((cc + 2 * f + i) - (a + 2 * d + g)) / (8 * dx);
+        const gN = strength * ((a + 2 * b + cc) - (g + 2 * h + i)) / (8 * dy);
         const inv = 1 / Math.sqrt(gE * gE + gN * gN + 1);
         const shade = Math.max(0, (-gE * Le - gN * Ln + Lu) * inv);
         const m = 1 + 1.4 * (shade - Lu);

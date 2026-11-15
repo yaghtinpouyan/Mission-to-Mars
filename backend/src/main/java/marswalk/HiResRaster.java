@@ -22,11 +22,22 @@ import java.util.Map;
 public final class HiResRaster implements AutoCloseable {
     public final int cols, rows;
     public final short nodata;
+    public final MapInfo mapInfo;
     private final ByteBuffer buf;          // already set to the file's byte order
     private final FileChannel channel;     // null for in-memory rasters
 
-    private HiResRaster(int cols, int rows, short nodata, ByteBuffer buf, FileChannel ch) {
-        this.cols = cols; this.rows = rows; this.nodata = nodata; this.buf = buf; this.channel = ch;
+    public static final class MapInfo {
+        public final double west, north, cellWidthDeg, cellHeightDeg;
+
+        private MapInfo(double west, double north, double cellWidthDeg, double cellHeightDeg) {
+            this.west = west; this.north = north;
+            this.cellWidthDeg = cellWidthDeg; this.cellHeightDeg = cellHeightDeg;
+        }
+    }
+
+    private HiResRaster(int cols, int rows, short nodata, MapInfo mapInfo, ByteBuffer buf, FileChannel ch) {
+        this.cols = cols; this.rows = rows; this.nodata = nodata; this.mapInfo = mapInfo;
+        this.buf = buf; this.channel = ch;
     }
 
     /** Raw 16-bit value (metres) at a cell; callers must check bounds. */
@@ -43,6 +54,7 @@ public final class HiResRaster implements AutoCloseable {
         int order = Integer.parseInt(h.getOrDefault("byte order", "0"));
         int offset = Integer.parseInt(h.getOrDefault("header offset", "0"));
         short nodata = (short) Math.round(Double.parseDouble(h.getOrDefault("data ignore value", "-32768")));
+        MapInfo mapInfo = h.containsKey("map info") ? parseMapInfo(h.get("map info"), hdr) : null;
         if (bands != 1) throw new IOException("Expected 1 band, header says " + bands + " (" + hdr + ")");
         if (type != 2) throw new IOException("Expected ENVI data type 2 (16-bit signed integer), found " + type);
         long expected = (long) cols * rows * 2 + offset;
@@ -52,14 +64,14 @@ public final class HiResRaster implements AutoCloseable {
         FileChannel ch = f.getChannel();
         ByteBuffer b = ch.map(FileChannel.MapMode.READ_ONLY, offset, (long) cols * rows * 2);
         b.order(order == 1 ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
-        return new HiResRaster(cols, rows, nodata, b, ch);
+        return new HiResRaster(cols, rows, nodata, mapInfo, b, ch);
     }
 
     /** In-memory raster (used by tests and the synthetic demo only). */
     public static HiResRaster fromArray(int cols, int rows, short[] data, short nodata) {
         ByteBuffer b = ByteBuffer.allocate(cols * rows * 2).order(ByteOrder.LITTLE_ENDIAN);
         for (short v : data) b.putShort(v);
-        return new HiResRaster(cols, rows, nodata, b, null);
+        return new HiResRaster(cols, rows, nodata, null, b, null);
     }
 
     /** Writes the same flat 16-bit little-endian file + ENVI header that "gdal_translate -of ENVI" produces. */
@@ -76,6 +88,32 @@ public final class HiResRaster implements AutoCloseable {
         String n = p.getFileName().toString();
         int i = n.lastIndexOf('.');
         return i > 0 ? n.substring(0, i) : n;
+    }
+
+    private static MapInfo parseMapInfo(String value, Path hdr) throws IOException {
+        String text = value.trim();
+        if (text.startsWith("{") && text.endsWith("}")) text = text.substring(1, text.length() - 1);
+        String[] parts = text.split(",");
+        if (parts.length < 7 || !parts[0].trim().equalsIgnoreCase("Equirectangular"))
+            throw new IOException("Expected Equirectangular ENVI map info in " + hdr);
+        try {
+            double refCol = Double.parseDouble(parts[1].trim());
+            double refRow = Double.parseDouble(parts[2].trim());
+            double x = Double.parseDouble(parts[3].trim());
+            double y = Double.parseDouble(parts[4].trim());
+            double cellWidthM = Double.parseDouble(parts[5].trim());
+            double cellHeightM = Double.parseDouble(parts[6].trim());
+            if (!Double.isFinite(refCol) || !Double.isFinite(refRow) || !Double.isFinite(x) || !Double.isFinite(y)
+                    || !Double.isFinite(cellWidthM) || !Double.isFinite(cellHeightM)
+                    || refCol <= 0 || refRow <= 0 || cellWidthM <= 0 || cellHeightM <= 0)
+                throw new NumberFormatException();
+            double degreesPerMeter = 180.0 / (Math.PI * Georef.MARS_RADIUS_M);
+            return new MapInfo((x - (refCol - 0.5) * cellWidthM) * degreesPerMeter,
+                    (y + (refRow - 0.5) * cellHeightM) * degreesPerMeter,
+                    cellWidthM * degreesPerMeter, cellHeightM * degreesPerMeter);
+        } catch (NumberFormatException e) {
+            throw new IOException("Invalid Equirectangular ENVI map info in " + hdr, e);
+        }
     }
 
     private static Path findHeader(Path raw) throws IOException {

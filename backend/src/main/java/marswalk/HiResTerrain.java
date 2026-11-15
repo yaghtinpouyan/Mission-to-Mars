@@ -20,8 +20,23 @@ public final class HiResTerrain implements Terrain {
                 || raster.cols / coarse.cols != raster.rows / coarse.rows)
             throw new IllegalArgumentException("High-resolution raster " + raster.cols + "x" + raster.rows
                     + " is not an integer refinement of the " + coarse.cols + "x" + coarse.rows + " navigation grid");
+        Georef expected = coarse.refined(raster.cols / coarse.cols);
+        HiResRaster.MapInfo map = raster.mapInfo;
+        if (map != null) {
+            double originToleranceDeg = 0.01;
+            double cellToleranceDeg = expected.degPerCell * 1e-4;
+            if (Math.abs(map.west - expected.west) > originToleranceDeg
+                    || Math.abs(map.north - expected.north) > originToleranceDeg
+                    || Math.abs(map.cellWidthDeg - expected.degPerCell) > cellToleranceDeg
+                    || Math.abs(map.cellHeightDeg - expected.degPerCell) > cellToleranceDeg)
+                throw new IllegalArgumentException(String.format(
+                        "High-resolution raster map info is misaligned: origin %.5fE, %.5fN, cell %.8f x %.8f degrees; "
+                                + "expected origin %.5fE, %.5fN, cell %.8f degrees",
+                        map.west, map.north, map.cellWidthDeg, map.cellHeightDeg,
+                        expected.west, expected.north, expected.degPerCell));
+        }
         this.raster = raster;
-        this.geo = coarse.refined(raster.cols / coarse.cols);
+        this.geo = expected;
         Arrays.fill(cacheKey, -1);
     }
 

@@ -11,6 +11,7 @@ Raster > Conversion > Translate (Convert Format)
 - Output file: `data/hires/mc13_elevation_463m.raw`   (QGIS may also write `mc13_elevation_463m.hdr` - keep both)
 
 Expected: raw file = 44,236,800 bytes; header says samples = 5760, lines = 3840, data type = 2.
+The backend reads the ENVI map info and checks the raster origin (within 0.01°) and cell spacing against the MC-13 grid before enabling optimization.
 If `mc13_full.tif` is gone: re-crop the global MOLA DEM with `-srcwin 28800 7680 5760 3840` (see top-level README), then do the step above.
 No 463 m slope file is needed: the backend computes slope from elevation (latitude-corrected).
 
