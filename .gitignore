@@ -13,7 +13,6 @@ backend/out/
 *.qgz
 *.qgs
 
-# the full-resolution (463 m) raster is large: keep it out of Git (see data/hires/README.md)
-data/hires/*.raw
+# other local full-resolution raster formats
 data/hires/*.bin
 data/hires/*.i16

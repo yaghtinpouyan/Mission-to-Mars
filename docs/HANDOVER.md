@@ -1,10 +1,10 @@
 # Handover (state at end of session)
 
-## Status: Stage 1 and Stage 2 verified on real terrain
+## Status: Stage 1 and Stage 2 implementation
 Previously verified: backend 25/25 tests, frontend math 7/7, real page + backend UI test 31/31 (`tests/frontend/ui-smoke.js`),
-screenshot inspected. Current branch verification: backend 26/26 tests; the uploaded 463 m raster loaded and three real route
-refinements completed via the HTTP API. The raw raster is in `data/hires/mc13_elevation_463m.raw` locally and is gitignored;
-the ENVI header remains tracked. Do not treat the synthetic upsample in `marswalk.SyntheticHires` as real terrain.
+screenshot inspected. A prior local environment also verified 26 backend tests and three real route refinements.
+The 463 m ENVI header and raw raster are tracked in this branch. The crop is sourced from the NASA MGS MOLA 128 pixels/degree product; see [data/hires/README.md](../data/hires/README.md) for its provenance and binary format.
+Do not treat the synthetic upsample in `marswalk.SyntheticHires` as real terrain.
 
 Real Stage 2 samples (balanced 22 km maximum corridor):
 - Isidis crossing (50E,5N to 85E,25N): high-res steepest terrain 11.15 -> 7.11 deg; distance 2,365.1 -> 2,383.2 km; refine ~0.64 s.
@@ -34,7 +34,7 @@ broader route-quality sampling beyond the real routes above.
 - Elevation and slope layers use fixed hillshade at true vertical scale; the colour layer has baked shading.
 
 ## Known issues / next steps for the next Claude
-1. Keep the 44 MB raw raster available locally or in a release/LFS for deployments; it is intentionally excluded from normal Git history.
+1. Keep the checked-in 44 MB raw raster and its ENVI header together; the backend requires both to enable high-resolution refinement.
 2. Look at the app in a real browser (layout on small screens, label readability, pinch zoom).
 3. Continue sampling real routes across additional crater/basin areas before changing the cost or corridor defaults.
 4. Refine step counts: "detours" use a 1 km threshold (`RoutePlanner.refine`) - adjust if wanted.

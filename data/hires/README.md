@@ -1,21 +1,11 @@
-# High-resolution (463 m) elevation raster - NOT in Git, you must create it
+# High-resolution MC-13 elevation
 
-Stage 2 (optimized route) needs the original 463 m MC-13 elevation. It is only ~44 MB, so it is a plain flat file that the
-backend memory-maps (only the parts a route touches are read). Without it the app still works: you get the general route.
+`mc13_elevation_463m.raw` is included in this branch. It lets the backend refine routes against the 463 m terrain immediately after checkout; no separate QGIS installation or local export is needed. The backend memory-maps the file.
 
-## Create it (one QGIS step, 1 minute)
-You already made `mc13_full.tif` (5760 x 3840, 463 m) earlier. In QGIS:
-Raster > Conversion > Translate (Convert Format)
-- Input layer: `mc13_full`
-- Additional command-line parameters: `-of ENVI -ot Int16`
-- Output file: `data/hires/mc13_elevation_463m.raw`   (QGIS may also write `mc13_elevation_463m.hdr` - keep both)
+## Source and format
 
-Expected: raw file = 44,236,800 bytes; header says samples = 5760, lines = 3840, data type = 2.
-The backend reads the ENVI map info and checks the raster origin (within 0.01°) and cell spacing against the MC-13 grid before enabling optimization.
-If `mc13_full.tif` is gone: re-crop the global MOLA DEM with `-srcwin 28800 7680 5760 3840` (see top-level README), then do the step above.
-No 463 m slope file is needed: the backend computes slope from elevation (latitude-corrected).
+The raster is a crop of the NASA Planetary Data System's MGS MOLA 128 pixels/degree topography tile [`megt44n000hb.img`](https://pds-geosciences.wustl.edu/mgs/urn-nasa-pds-mgs_mola_topography_derived/meg128/megt44n000hb.img). Its PDS metadata describes signed 16-bit big-endian elevations in meters on a 11520 x 5632 grid covering 0-90°E and 0-44°N.
 
-## Hosting options (decision record)
-- MC-13 only = 44 MB -> keep it local, or attach it to a GitHub Release, or Git LFS. Do not commit it to normal Git history.
-- A Cloud Optimized GeoTIFF + HTTP range requests only pays off if the whole planet (2 GB) is served from a remote host.
-  Java would then need GeoTools/GDAL. Not needed for this project.
+The checked-in 5760 x 3840 crop covers 45-90°E and 0-30°N: source columns 5760-11519 and rows 1792-5631. PDS big-endian samples are byte-swapped to the app's little-endian Int16 format, and the PDS no-data value (0) is stored as -32768 to match the tracked ENVI header. The expected raw size is 44,236,800 bytes. No interpolation or synthetic elevation values are added.
+
+The tracked `mc13_elevation_463m.hdr` provides the app's Equirectangular Mars georeference; the backend validates that it aligns with the low-resolution navigation grid before enabling refinement. No 463 m slope file is needed: the backend computes slope from elevation.
