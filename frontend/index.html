@@ -11,36 +11,76 @@
   <!-- Sidebar -->
   <aside>
     <h1>Marswalk Planner</h1>
-    <p class="muted">Jezero Crater delta. An EVA route planner that combines terrain, science targets, and weather conditions.</p>
+    <p class="muted">Terrain-aware route planning across the MC-13 (Syrtis Major) region of Mars. Pick a start and a destination on the map: a general route is calculated first, then refined with higher-resolution terrain data.</p>
+    <div id="status" class="status" role="status" aria-live="polite">Starting…</div>
 
-    <h2>Conditions</h2>
-    <select id="cond">
-      <option value="clear">Clear sol</option>
-      <option value="dusty">Dust warning</option>
-    </select>
+    <h2>Plan a route</h2>
+    <ol class="steps" id="steps">
+      <li data-step="start">Click the map to set the start</li>
+      <li data-step="end">Click again to set the destination</li>
+      <li data-step="general">General route (1,852 m terrain)</li>
+      <li data-step="optimized">Optimization (463 m terrain)</li>
+    </ol>
+    <div class="btnrow">
+      <button id="reset" type="button">Clear</button>
+      <button id="recalc" type="button" disabled>Recalculate</button>
+    </div>
+
+    <h2>Route shown</h2>
+    <div class="seg" role="radiogroup" aria-label="Route shown">
+      <label><input type="radio" name="routeview" value="general" disabled><span><i class="sw sw-general"></i>General</span></label>
+      <label><input type="radio" name="routeview" value="optimized" disabled><span><i class="sw sw-optimized"></i>Optimized</span></label>
+    </div>
+    <label class="check"><input type="checkbox" id="ghost"> Also show the other route faintly</label>
 
     <h2>Map layer</h2>
-    <select id="layer">
-      <option value="terrain">Terrain image</option>
-      <option value="slope">Slope (walkability)</option>
+    <select id="layer" aria-label="Map layer">
+      <option value="color">Color topography</option>
+      <option value="elevation">Elevation</option>
+      <option value="slope">Slope</option>
     </select>
 
-    <h2>Vertical exaggeration</h2>
-    <input id="exag" type="range" min="1" max="5" step="0.5" value="1">
+    <details id="prefs">
+      <summary>Route preferences</summary>
+      <label class="field">Slope avoidance <span id="wSlopeVal" class="val">4</span>
+        <input id="wSlope" type="range" min="0" max="12" step="0.5" value="4"></label>
+      <label class="field">Climb avoidance <span id="wClimbVal" class="val">2</span>
+        <input id="wClimb" type="range" min="0" max="6" step="0.5" value="2"></label>
+      <label class="check"><input type="checkbox" id="useMinElev"> Stay above elevation
+        <input id="minElev" type="number" step="100" value="-1500" class="num"> m</label>
+      <label class="check"><input type="checkbox" id="useMaxSlope"> Never exceed slope
+        <input id="maxSlope" type="number" step="1" min="1" value="15" class="num"> °</label>
+      <label class="field">Optimization search width
+        <select id="width">
+          <option value="11000">Quick (up to 11 km from the general route)</option>
+          <option value="22000" selected>Balanced (up to 22 km)</option>
+          <option value="40000">Thorough (up to 40 km)</option>
+        </select></label>
+      <p class="muted small">These are tuning settings for finding candidate routes. They are not validated rover mobility limits. Press Recalculate after changing them.</p>
+    </details>
 
-    <h2>Route summary</h2>
-    <div id="summary"></div>
-    <div id="verdict"></div>
+    <h2>Route summary <span id="summaryFor" class="val"></span></h2>
+    <div id="summary" class="muted">Choose a start and destination to see route details.</div>
+    <canvas id="profile" width="308" height="96" aria-label="Elevation profile along the route"></canvas>
 
-    <h2>Science stops</h2>
-    <div id="stops"></div>
-
-    <p class="muted small">Data: NASA/JPL, USGS Astrogeology, MRO HiRISE (University of Arizona).</p>
+    <p class="muted small">Data: NASA MGS MOLA elevation via USGS Astrogeology; color topography from the ASU Mars Global Data Sets. Routes are candidate paths computed from terrain data only. They are not validated for any real rover.</p>
   </aside>
 
-  <!-- The view box-->
-  <main id="viewer">3D viewer goes here</main>
+  <!-- The map -->
+  <main id="mapArea">
+    <canvas id="map"></canvas>
+    <div id="legend" class="overlay legend" hidden></div>
+    <div id="readout" class="overlay readout">Move the pointer over the map</div>
+    <div class="overlay zoombtns">
+      <button id="zin" type="button" aria-label="Zoom in">+</button>
+      <button id="zout" type="button" aria-label="Zoom out">−</button>
+      <button id="zfit" type="button" aria-label="Fit the whole region">⤢</button>
+    </div>
+    <div id="busy" class="overlay busy" hidden role="status"><span class="spin"></span><span id="busyText"></span><span class="bar"></span></div>
+    <div id="fatal" class="overlay fatal" hidden></div>
+  </main>
 
+  <script src="geo.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
