@@ -3,8 +3,7 @@
 ## Status: Stage 1 and Stage 2 implementation
 Previously verified: backend 25/25 tests, frontend math 7/7, real page + backend UI test 31/31 (`tests/frontend/ui-smoke.js`),
 screenshot inspected. A prior local environment also verified 26 backend tests and three real route refinements.
-The 463 m ENVI header is tracked, but the raw raster is not included in Git and is not present in this checkout.
-Stage 2 therefore requires installing the raster using [data/hires/README.md](../data/hires/README.md).
+The 463 m ENVI header and raw raster are tracked in this branch. The crop is sourced from the NASA MGS MOLA 128 pixels/degree product; see [data/hires/README.md](../data/hires/README.md) for its provenance and binary format.
 Do not treat the synthetic upsample in `marswalk.SyntheticHires` as real terrain.
 
 Real Stage 2 samples (balanced 22 km maximum corridor):
@@ -35,7 +34,7 @@ broader route-quality sampling beyond the real routes above.
 - Elevation and slope layers use fixed hillshade at true vertical scale; the colour layer has baked shading.
 
 ## Known issues / next steps for the next Claude
-1. Keep the 44 MB raw raster available locally or in a release/LFS for deployments; it is intentionally excluded from normal Git history.
+1. Keep the checked-in 44 MB raw raster and its ENVI header together; the backend requires both to enable high-resolution refinement.
 2. Look at the app in a real browser (layout on small screens, label readability, pinch zoom).
 3. Continue sampling real routes across additional crater/basin areas before changing the cost or corridor defaults.
 4. Refine step counts: "detours" use a 1 km threshold (`RoutePlanner.refine`) - adjust if wanted.

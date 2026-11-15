@@ -1,6 +1,6 @@
 ENVI
 description = {
-/mnt/data/data/hires/mc13_elevation_463m.raw}
+NASA MGS MOLA 128 pixels per degree topography; MC-13 crop}
 samples = 5760
 lines   = 3840
 bands   = 1
